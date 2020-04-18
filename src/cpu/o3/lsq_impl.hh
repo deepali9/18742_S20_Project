@@ -245,6 +245,7 @@ LSQ<Impl>::insertStore(const DynInstPtr &store_inst)
     thread[tid].insertStore(store_inst);
 }
 
+// ASHISH_LSQ
 template<class Impl>
 Fault
 LSQ<Impl>::executeLoad(const DynInstPtr &inst)

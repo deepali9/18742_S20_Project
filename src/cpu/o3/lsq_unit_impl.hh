@@ -529,6 +529,7 @@ LSQUnit<Impl>::checkViolations(typename LoadQueue::iterator& loadIt,
 
 
 
+// ASHISH_LSQ
 template <class Impl>
 Fault
 LSQUnit<Impl>::executeLoad(const DynInstPtr &inst)
@@ -542,6 +543,20 @@ LSQUnit<Impl>::executeLoad(const DynInstPtr &inst)
 
     assert(!inst->isSquashed());
 
+    // ASHISH_LSQ
+    // Logic is to be inserted here. If the instruction is speculative and the
+    // security buffer is full, this function should return something specific.
+    // Also, since, IEW upon receiving fault, add the instruction into deferred
+    // memroy instruction queue, we need to check how to make sure that
+    // deferred instruction queue can be updated to mark those instruction
+    // runnable again when Security Buffer is freed
+
+    // bool secBufIsFull = instance_of_secbuf->isFull();
+    // if (!(inst->isNonSpeculative()) && secBufIsFull) {
+    //   return SecBufFullFault;
+    // }
+
+    // ASHISH_LSQ
     load_fault = inst->initiateAcc();
 
     if (load_fault == NoFault && !inst->readMemAccPredicate()) {

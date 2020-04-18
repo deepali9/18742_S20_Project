@@ -152,6 +152,13 @@ BaseO3DynInst<Impl>::initiateAcc()
     bool no_squash_from_TC = this->thread->noSquashFromTC;
     this->thread->noSquashFromTC = true;
 
+    //ASHISH_LSQ
+    //I don't clearly get where this function is defined. In the static inst
+    //class, this function is a virtual definition of which, I did not find any
+    //definition. Though it seems like, it is not required to figure out how
+    //this function is working. We should be fine if we just insert the
+    //security buffer full check in the lsq_unit_impl::execute function.
+    //NOT SURE
     this->fault = this->staticInst->initiateAcc(this, this->traceData);
 
     this->thread->noSquashFromTC = no_squash_from_TC;

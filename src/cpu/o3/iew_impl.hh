@@ -57,9 +57,10 @@
 #include "cpu/o3/iew.hh"
 #include "cpu/timebuf.hh"
 #include "debug/Activity.hh"
+#include "debug/AshishBasic.hh"
+#include "debug/AshishSecBuf.hh"
 #include "debug/Drain.hh"
 #include "debug/IEW.hh"
-#include "debug/AshishBasic.hh"
 #include "debug/O3PipeView.hh"
 #include "params/DerivO3CPU.hh"
 
@@ -1303,7 +1304,16 @@ DefaultIEW<Impl>::executeInsts()
                     instQueue.deferMemInst(inst);
                     continue;
                 }
-
+                // ASHISH_LSQ
+                // we need to add this SecBufFullFault fault: TODO
+                if (!(inst->isNonSpeculative()) && fault == SecBufFullFault) {
+                  //This must mean that instruction was not executed and hence
+                  //needs to be pushed into the deferred memory inst
+           DPRINTF(AshishSecBuf,"Execute:SecBufFull, deferring load.\n");
+                  instQueue.deferMemInst(inst);
+                  continue;
+                }
+                // ASHISH_LSQ
                 if (inst->isDataPrefetch() || inst->isInstPrefetch()) {
                     inst->fault = NoFault;
                 }

@@ -781,6 +781,7 @@ InstructionQueue<Impl>::scheduleReadyInsts()
     IssueStruct *i2e_info = issueToExecuteQueue->access(0);
 
     DynInstPtr mem_inst;
+    // ASHISH_LSQ
     while (mem_inst = std::move(getDeferredMemInstToExecute())) {
         addReadyMemInst(mem_inst);
     }
@@ -1141,6 +1142,7 @@ InstructionQueue<Impl>::completeMemInst(const DynInstPtr &completed_inst)
     count[tid]--;
 }
 
+// ASHISH_LSQ
 template <class Impl>
 void
 InstructionQueue<Impl>::deferMemInst(const DynInstPtr &deferred_inst)
@@ -1166,12 +1168,18 @@ InstructionQueue<Impl>::cacheUnblocked()
     cpu->wakeCPU();
 }
 
+// ASHISH_LSQ
 template <class Impl>
 typename Impl::DynInstPtr
 InstructionQueue<Impl>::getDeferredMemInstToExecute()
 {
     for (ListIt it = deferredMemInsts.begin(); it != deferredMemInsts.end();
          ++it) {
+        // ASHISH_LSQ
+        // We also need to update some logic here for security buffer. Like if
+        // the security buffer got free, and this instruction is a speculative
+        // load, free up the queue and return just like the first two logic are
+        // doing
         if ((*it)->translationCompleted() || (*it)->isSquashed()) {
             DynInstPtr mem_inst = std::move(*it);
             deferredMemInsts.erase(it);
