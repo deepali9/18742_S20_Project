@@ -534,6 +534,12 @@ class BaseDynInst : public ExecContext, public RefCounted
     bool isMemBarrier()   const { return staticInst->isMemBarrier(); }
     bool isWriteBarrier() const { return staticInst->isWriteBarrier(); }
     bool isNonSpeculative() const { return staticInst->isNonSpeculative(); }
+    // ASHISH_LSQ
+    // Just like isNonSpeculative
+    bool isSecBufFull() const { return staticInst->isSecBufFull(); }
+    void setSecBufFull() { staticInst->setSecBufFull(); }
+    void resetSecBufFull() { staticInst->resetSecBufFull(); }
+    // ASHISH_LSQ
     bool isQuiesce() const { return staticInst->isQuiesce(); }
     bool isIprAccess() const { return staticInst->isIprAccess(); }
     bool isUnverifiable() const { return staticInst->isUnverifiable(); }

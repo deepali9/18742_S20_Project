@@ -20,6 +20,14 @@ class SecBuf
     //Typedefs from the Impl.
     typedef typename Impl::O3CPU O3CPU;
 
+    //if security buffer is full.
+    bool isFull()
+    { return numInstsInSecBuf == numEntries; }
+
+    /** Returns if a specific thread's partition is full. */
+    bool isFull(ThreadID tid)
+    { return threadEntries[tid] == maxEntries[tid]; }
+
   private:
     /** pointer to the cpu */
     O3CPU *cpu;

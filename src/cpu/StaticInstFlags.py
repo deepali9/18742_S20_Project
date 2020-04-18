@@ -93,6 +93,15 @@ class StaticInstFlags(Enum):
         'IsERET',           # <- Causes the IFU to stall (MIPS ISA)
 
         'IsNonSpeculative', # Should not be executed speculatively
+        #ASHISH_LSQ
+        #Adding if this instruction was faulted because it was speculative and
+        #the security buffer was full. Though it is not a "characteristic" of
+        #an instruction per say, but this seems like a reasonable hack since
+        #IsNonSpeculative is defined here and we are only going to use
+        #IsSecBufFull flag with IsNonSpeculative flag
+        'IsSecBufFull',     # If this instruction was not issued by LSQ because
+                            # secbuf was full
+        #ASHIHS_LSQ
         'IsQuiesce',        # Is a quiesce instruction
 
         'IsIprAccess',      # Accesses IPRs

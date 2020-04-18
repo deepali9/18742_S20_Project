@@ -1294,6 +1294,14 @@ DefaultIEW<Impl>::executeInsts()
                 //     inst->pcState(), inst->threadNumber,inst->seqNum);
                 // }
 
+                // ASHISH_LSQ
+                // Since, I could not probe where are the instructions' flags
+                // set, I am resetting the IsSecBufFull flag here. Since the
+                // function below ldstQueue.executeLoad(inst); is supposed to
+                // set it "only under some condition"
+                inst->resetSecBufFull();
+                // ASHISH_LSQ
+
                 fault = ldstQueue.executeLoad(inst);
                 if (inst->isTranslationDelayed() &&
                     fault == NoFault) {
@@ -1305,11 +1313,14 @@ DefaultIEW<Impl>::executeInsts()
                     continue;
                 }
                 // ASHISH_LSQ
-                // we need to add this SecBufFullFault fault: TODO
-                if (!(inst->isNonSpeculative()) && fault == SecBufFullFault) {
-                  //This must mean that instruction was not executed and hence
-                  //needs to be pushed into the deferred memory inst
-           DPRINTF(AshishSecBuf,"Execute:SecBufFull, deferring load.\n");
+                // we need to check if the instruction was non-speculative and
+                // the isSecBufFull flag is set. If yes, that means this
+                // instruction was NOT ISSUED by the LSQ. Hence we need to
+                // defer it for now and give it a run later
+                if (!(inst->isNonSpeculative()) &&
+                     (inst->isSecBufFull())) {
+                  DPRINTF(AshishSecBuf,"Execute:SecBufFull,",
+                            "deferring load.\n");
                   instQueue.deferMemInst(inst);
                   continue;
                 }

@@ -189,6 +189,9 @@ class StaticInst : public RefCounted, public StaticInstFlags
     bool isMemBarrier()   const { return flags[IsMemBarrier]; }
     bool isWriteBarrier() const { return flags[IsWriteBarrier]; }
     bool isNonSpeculative() const { return flags[IsNonSpeculative]; }
+    // ASHISH_LSQ
+    bool isSecBufFull() const {return flags[IsSecBufFull];}
+    // ASHISH_LSQ
     bool isQuiesce() const { return flags[IsQuiesce]; }
     bool isIprAccess() const { return flags[IsIprAccess]; }
     bool isUnverifiable() const { return flags[IsUnverifiable]; }
@@ -206,6 +209,13 @@ class StaticInst : public RefCounted, public StaticInstFlags
     void setLastMicroop() { flags[IsLastMicroop] = true; }
     void setDelayedCommit() { flags[IsDelayedCommit] = true; }
     void setFlag(Flags f) { flags[f] = true; }
+
+    // ASHISH_LSQ
+    // Since we want to set and reset the IsSecBufFull flag, we need custom
+    // function which is not the case with other flags
+    void setSecBufFull() { flags[IsSecBufFull] = true; }
+    void resetSecBufFull() { flags[IsSecBufFull] = false; }
+    // ASHISH_LSQ
 
     /// Operation class.  Used to select appropriate function unit in issue.
     OpClass opClass()     const { return _opClass; }

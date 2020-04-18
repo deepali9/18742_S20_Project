@@ -529,7 +529,6 @@ LSQUnit<Impl>::checkViolations(typename LoadQueue::iterator& loadIt,
 
 
 
-// ASHISH_LSQ
 template <class Impl>
 Fault
 LSQUnit<Impl>::executeLoad(const DynInstPtr &inst)
@@ -551,12 +550,14 @@ LSQUnit<Impl>::executeLoad(const DynInstPtr &inst)
     // deferred instruction queue can be updated to mark those instruction
     // runnable again when Security Buffer is freed
 
-    // bool secBufIsFull = instance_of_secbuf->isFull();
-    // if (!(inst->isNonSpeculative()) && secBufIsFull) {
-    //   return SecBufFullFault;
-    // }
-
+    if (!(inst->isNonSpeculative())
+       /*&& !(SecBuf->isFull(inst->threadNumber)*/) {
+      //TODO
+      //inst->setSecBufFull();
+      //return NoFault;
+    }
     // ASHISH_LSQ
+
     load_fault = inst->initiateAcc();
 
     if (load_fault == NoFault && !inst->readMemAccPredicate()) {
