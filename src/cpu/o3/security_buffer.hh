@@ -72,6 +72,19 @@ class SecBuf
 
     /** Reset function*/
     void reset();
+
+    // Placeholder function
+    // insert this entry into security buffer
+    void insert(/*TODO: arguments*/);
+
+    // Placeholder function
+    // commit this entry. For sec buf it means that data from this can be now
+    // pushed into cache
+    void commit(InstSeqNum seqNum);
+
+    // Placeholder function
+    // squash this entry. For sec buf it means discard this data
+    void squash(InstSeqNum seqNum);
 };
 
 #endif //__CPU_O3_SECURITY_BUFFER_HH__

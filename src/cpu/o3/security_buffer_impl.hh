@@ -44,4 +44,34 @@ void SecBuf<Impl>::reset(){
   numInstsInSecBuf = 0;
 }
 
+template <class Impl>
+void SecBuf<Impl>::insert(/*TODO: Arguments*/){
+  //placeholder
+  //insert this entry into the security buffer
+  //assert(There is a vacant entry for that thread);
+  //
+  //allocate new entry (probably expand vector)
+}
+
+template <class Impl>
+void SecBuf<Impl>::commit(InstSeqNum seqNum){
+  //placeholder
+  //erase this entry from here and place the data into the L1 cache
+  //for erasing, if possible use squash function
+  //
+  //Initiate an access to cache
+  //
+  //squash(seqNum);
+}
+
+template <class Impl>
+void SecBuf<Impl>::squash(InstSeqNum seqNum){
+  //placeholder
+  //discard this entry from here
+  //
+  //Free the space used by the data structure
+  //
+  //delete the vector item
+}
+
 #endif
