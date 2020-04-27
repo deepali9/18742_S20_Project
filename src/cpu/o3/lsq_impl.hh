@@ -135,6 +135,18 @@ LSQ<Impl>::setActiveThreads(list<ThreadID> *at_ptr)
     assert(activeThreads != 0);
 }
 
+//ASHISH_NEW
+template<class Impl>
+void
+LSQ<Impl>::setSecBuf(SecBuf *_SecBuf)
+{
+    ////Initialize LSQs
+    for (ThreadID tid = 0; tid < numThreads; tid++) {
+      thread[tid].setSecBuf(_SecBuf);
+    }
+}
+//ASHISH_NEW
+
 template <class Impl>
 void
 LSQ<Impl>::drainSanityCheck() const
@@ -1011,8 +1023,9 @@ LSQ<Impl>::SplitDataRequest::recvTimingResp(PacketPtr pkt)
         PacketPtr resp = isLoad()
             ? Packet::createRead(mainReq)
             : Packet::createWrite(mainReq);
-        if (isLoad())
+        if (isLoad()) {
             resp->dataStatic(_inst->memData);
+        }
         else
             resp->dataStatic(_data);
         resp->senderState = _senderState;

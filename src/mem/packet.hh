@@ -85,9 +85,23 @@ class MemCmd
     {
         InvalidCmd,
         ReadReq,
+        //Deepali - speculative read req start
+        ////Speculative Read Request - same as ReadReq except
+            // for IsSpeculative attribute being on
+        SpeculativeReadReq,
+        //Deepali
         ReadResp,
+        //Deepali - speculative read response start
+        ////Speculative Read Response - same as ReadResponse
+            // except for IsSpeculative attribute being on
+        SpeculativeReadResp,
+        //Deepali
         ReadRespWithInvalidate,
         WriteReq,
+        //Deepali - Security Buffer fill write req start
+        ////Security buffer fill write request
+        SecBufFillWriteReq,
+        //Deepali
         WriteResp,
         WritebackDirty,
         WritebackClean,
@@ -162,7 +176,8 @@ class MemCmd
         IsFlush,        //!< Flush the address from caches
         FromCache,      //!< Request originated from a caching agent
         //Deepali //
-        //IsSpeculative, //!<Used to determine if the packet will be reponded by cache or not
+        IsSpeculative, //!<Tag for speculative load
+        IsSecBufFill, //!<Fill request coming from the secuirty buffer
         //Deepali //
         NUM_COMMAND_ATTRIBUTES
     };
@@ -230,7 +245,8 @@ class MemCmd
     bool isPrint() const        { return testCmdAttrib(IsPrint); }
     bool isFlush() const        { return testCmdAttrib(IsFlush); }
     //Deepali //
-    //bool isSpeculative() const        { return testCmdAttrib(IsSpeculative); }
+    bool isSpeculative() const        { return testCmdAttrib(IsSpeculative); }
+    bool isSecBufFill() const        { return testCmdAttrib(IsSecBufFill); }
     //Deepali //
     Command
     responseCommand() const
@@ -345,11 +361,6 @@ class Packet : public Printable
     /// physical, depending on the system configuration.
     Addr addr;
 
-    //Deepali //
-    //The data type which is the uniqute id with each instruction in the core  
-    //Indx ROB_indx; //Something to keep track of which speculative instruction is this data associated with
-    //Deepali //
-    
     /// True if the request targets the secure memory space.
     bool _isSecure;
 
@@ -565,7 +576,10 @@ class Packet : public Printable
     bool isError() const             { return cmd.isError(); }
     bool isPrint() const             { return cmd.isPrint(); }
     bool isFlush() const             { return cmd.isFlush(); }
-
+    //Deepali
+    bool isSpeculative() const             { return cmd.isSpeculative(); }
+    bool isSecBufFill() const             { return cmd.isSecBufFill(); }
+    //Deepali
     bool isWholeLineWrite(unsigned blk_size)
     {
         return (cmd == MemCmd::WriteReq || cmd == MemCmd::WriteLineReq) &&
@@ -892,6 +906,10 @@ class Packet : public Printable
             return MemCmd::SoftPFExReq;
         else if (req->isPrefetch())
             return MemCmd::SoftPFReq;
+        //Deepali - if speculative
+        else if (req->getSpeculativeRead())
+            return MemCmd::SpeculativeReadReq;
+        //Deepali
         else
             return MemCmd::ReadReq;
     }
@@ -911,7 +929,12 @@ class Packet : public Printable
               MemCmd::InvalidateReq;
         } else if (req->isCacheClean()) {
             return MemCmd::CleanSharedReq;
-        } else
+        }
+        //Deepali - if it is a fill from security buffer
+        else if (req->getSecBufFillReq())
+            return MemCmd::SpeculativeReadReq;
+        //Deepali
+        else
             return MemCmd::WriteReq;
     }
 

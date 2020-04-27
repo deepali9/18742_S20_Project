@@ -69,6 +69,9 @@ class LSQ
     typedef typename Impl::DynInstPtr DynInstPtr;
     typedef typename Impl::CPUPol::IEW IEW;
     typedef typename Impl::CPUPol::LSQUnit LSQUnit;
+    //ASHISH_NEW
+    typedef typename Impl::CPUPol::SecBuf SecBuf;
+    //ASHISH_NEW
 
     class LSQRequest;
     /** Derived class to hold any sender state the LSQ needs. */
@@ -300,6 +303,9 @@ class LSQ
         std::vector<bool> _byteEnable;
         uint32_t _numOutstandingPackets;
         AtomicOpFunctorPtr _amo_op;
+        //Deepali
+        bool _isSecBufFill = false;
+        //Deepali
       protected:
         LSQUnit* lsqUnit() { return &_port; }
         LSQRequest(LSQUnit* port, const DynInstPtr& inst, bool isLoad) :
@@ -610,6 +616,14 @@ class LSQ
             return flags.isSet(Flag::Sent);
         }
 
+        //Deepali
+        bool
+        isSecBufFill()
+        {
+            return _isSecBufFill;
+        }
+        //Deepali
+
         bool
         isPartialFault()
         {
@@ -834,6 +848,11 @@ class LSQ
     /** Sets the pointer to the list of active threads. */
     void setActiveThreads(std::list<ThreadID> *at_ptr);
 
+    //ASHISH_NEW
+    /** Sets pointer to the scoreboard. */
+    void setSecBuf(SecBuf *_SecBuf);
+    //ASHISH_NEW
+
     /** Perform sanity checks after a drain. */
     void drainSanityCheck() const;
     /** Has the LSQ drained? */
@@ -861,6 +880,8 @@ class LSQ
     /**
      * Commits loads up until the given sequence number for a specific thread.
      */
+    //Deepali - add call commit function of the security buffer
+        //from this for each of the instruction committed
     void commitLoads(InstSeqNum &youngest_inst, ThreadID tid)
     { thread.at(tid).commitLoads(youngest_inst); }
 
@@ -874,6 +895,7 @@ class LSQ
      * Attempts to write back stores until all cache ports are used or the
      * interface becomes blocked.
      */
+    //Deepali - update to include interrupt from the security buffer fill
     void writebackStores();
     /** Same as above, but only for one thread. */
     void writebackStores(ThreadID tid);
@@ -881,6 +903,8 @@ class LSQ
     /**
      * Squash instructions from a thread until the specified sequence number.
      */
+    //Deepali - add call commit function of the security buffer
+        //from this for each of the instruction squashed
     void
     squash(const InstSeqNum &squashed_num, ThreadID tid)
     {

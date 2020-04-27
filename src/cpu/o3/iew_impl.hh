@@ -393,6 +393,17 @@ DefaultIEW<Impl>::setScoreboard(Scoreboard *sb_ptr)
     scoreboard = sb_ptr;
 }
 
+//ASHISH_NEW
+template<class Impl>
+void
+DefaultIEW<Impl>::setSecBuf(SecBuf *_SecBuf)
+{
+    //We do not have any security buffer here.
+    //Just set the secbuf for the load store queue
+    ldstQueue.setSecBuf(_SecBuf);
+}
+//ASHISH_NEW
+
 template <class Impl>
 bool
 DefaultIEW<Impl>::isDrained() const
@@ -1319,7 +1330,7 @@ DefaultIEW<Impl>::executeInsts()
                 // defer it for now and give it a run later
                 if (!(inst->isNonSpeculative()) &&
                      (inst->isSecBufFull())) {
-                  DPRINTF(AshishSecBuf,"Execute:SecBufFull,",
+                  DPRINTF(AshishBasic,"Execute:SecBufFull,",
                             "deferring load.\n");
                   instQueue.deferMemInst(inst);
                   continue;

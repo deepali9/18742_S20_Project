@@ -386,6 +386,12 @@ class Request
     /** A pointer to an atomic operation */
     AtomicOpFunctorPtr atomicOpFunctor;
 
+    //Deepali
+    /**Tag for speculative read - set false by default*/
+    bool _isSpeculativeRead = false;
+    /**Tag for the write request being a Security Buffer Fill request*/
+    bool _isSecBufFillReq = false;
+    //Deepali
   public:
 
     /**
@@ -556,6 +562,19 @@ class Request
         privateFlags.set(VALID_PADDR);
     }
 
+    //Deepali
+    void
+    setSpeculativeRead(bool isSpeculativeRead)
+    {
+        _isSpeculativeRead = isSpeculativeRead;
+    }
+
+    void
+    setSecBufFillReq(bool isSecBufFillReq)
+    {
+        _isSecBufFillReq = isSecBufFillReq;
+    }
+    //Deepali
     /**
      * Generate two requests as if this request had been split into two
      * pieces. The original request can't have been translated already.
@@ -598,6 +617,20 @@ class Request
         assert(privateFlags.isSet(VALID_PADDR));
         return _paddr;
     }
+
+    //Deepali
+    bool
+    getSpeculativeRead() const
+    {
+        return _isSpeculativeRead;
+    }
+
+    bool
+    getSecBufFillReq() const
+    {
+        return _isSecBufFillReq;
+    }
+    //Deepali
 
     /**
      * Time for the TLB/table walker to successfully translate this request.

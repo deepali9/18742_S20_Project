@@ -58,6 +58,7 @@
 #include "cpu/simple_thread.hh"
 #include "cpu/thread_context.hh"
 #include "debug/Activity.hh"
+#include "debug/AshishBasic.hh"
 #include "debug/Drain.hh"
 #include "debug/O3CPU.hh"
 #include "debug/Quiesce.hh"
@@ -144,6 +145,9 @@ FullO3CPU<Impl>::FullO3CPU(DerivO3CPUParams *params)
       system(params->system),
       lastRunningCycle(curCycle())
 {
+    //ASHISH_NEW
+    DPRINTF(AshishBasic, "CPU construction starts\n");
+    //ASHISH_NEW
     if (!params->switched_out) {
         _status = Running;
     } else {
@@ -220,6 +224,12 @@ FullO3CPU<Impl>::FullO3CPU(DerivO3CPUParams *params)
 
     rename.setScoreboard(&scoreboard);
     iew.setScoreboard(&scoreboard);
+
+    //ASHISH_NEW
+    DPRINTF(AshishBasic, "CPU Setting secbuf\n");
+    iew.setSecBuf(&secbuf);
+    DPRINTF(AshishBasic, "CPU Setting secbuf DONE\n");
+    //ASHISH_NEW
 
     // Setup the rename map for whichever stages need it.
     for (ThreadID tid = 0; tid < numThreads; tid++) {
@@ -374,6 +384,10 @@ FullO3CPU<Impl>::FullO3CPU(DerivO3CPUParams *params)
 
     for (ThreadID tid = 0; tid < this->numThreads; tid++)
         this->thread[tid]->setFuncExeInst(0);
+
+    //ASHISH_NEW
+    DPRINTF(AshishBasic, "CPU construction starts\n");
+    //ASHISH_NEW
 }
 
 template <class Impl>

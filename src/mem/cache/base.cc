@@ -619,6 +619,7 @@ BaseCache::recvAtomic(PacketPtr pkt)
     return lat * clockPeriod();
 }
 
+//Deepali - check for read access functional processing
 void
 BaseCache::functionalAccess(PacketPtr pkt, bool from_cpu_side)
 {
