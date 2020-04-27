@@ -86,6 +86,11 @@ class BaseO3DynInst : public BaseDynInst<Impl>
     BaseO3DynInst(const StaticInstPtr &_staticInst,
                   const StaticInstPtr &_macroop);
 
+    //ASHISH_SEGFAULT
+    //Adding copy constructor of sorts
+    BaseO3DynInst(const BaseO3DynInst& copyInst);
+    //ASHISH_SEGFAULT
+
     ~BaseO3DynInst();
 
     /** Executes the instruction.*/

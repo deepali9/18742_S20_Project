@@ -88,6 +88,9 @@ class DefaultIEW
     typedef typename CPUPol::IQ IQ;
     typedef typename CPUPol::RenameMap RenameMap;
     typedef typename CPUPol::LSQ LSQ;
+    //ASHISH_NEW
+    typedef typename CPUPol::SecBuf SecBuf;
+    //ASHISH_NEW
 
     typedef typename CPUPol::TimeStruct TimeStruct;
     typedef typename CPUPol::IEWStruct IEWStruct;
@@ -164,6 +167,11 @@ class DefaultIEW
 
     /** Sets pointer to the scoreboard. */
     void setScoreboard(Scoreboard *sb_ptr);
+
+    //ASHISH_NEW
+    /** Sets pointer to the scoreboard. */
+    void setSecBuf(SecBuf *_SecBuf);
+    //ASHISH_NEW
 
     /** Perform sanity checks after a drain. */
     void drainSanityCheck() const;

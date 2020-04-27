@@ -54,9 +54,9 @@
 #include "cpu/o3/lsq.hh"
 #include "cpu/o3/lsq_unit.hh"
 #include "debug/Activity.hh"
+#include "debug/AshishBasic.hh"
 #include "debug/IEW.hh"
 #include "debug/LSQUnit.hh"
-//#include "debug/AshishBasic.hh"
 #include "debug/O3PipeView.hh"
 #include "mem/packet.hh"
 #include "mem/request.hh"
@@ -102,6 +102,19 @@ LSQUnit<Impl>::recvTimingResp(PacketPtr pkt)
     /* Check that the request is still alive before any further action. */
     if (senderState->alive()) {
         ret = req->recvTimingResp(pkt);
+        //Deepali
+        //Check if speculative load then for the response
+            //create an entry in the secruity buffer
+        if (req->request()->getSpeculativeRead()) {
+            DPRINTF(AshishBasic, "DeepaliLSQ: Update entry in the"
+                "Security buffer Addr:%#x, data:%#x [sn:%lli]\n",
+                req->request()->getPaddr(), (int)*(senderState->inst->memData),
+                senderState->inst->seqNum);
+            secbuf->updateEntry(senderState->inst->seqNum,
+                senderState->inst->memData,
+                senderState->inst->threadNumber);
+        }
+        //Deepali
     } else {
         senderState->outstanding--;
     }
@@ -526,8 +539,15 @@ LSQUnit<Impl>::checkViolations(typename LoadQueue::iterator& loadIt,
     return NoFault;
 }
 
-
-
+//ASHISH_NEW
+template<class Impl>
+void
+LSQUnit<Impl>::setSecBuf(SecBuf *_SecBuf)
+{
+    DPRINTF(AshishBasic, "Setting secbuf for the threads\n");
+    secbuf = _SecBuf;
+}
+//ASHISH_NEW
 
 template <class Impl>
 Fault
@@ -549,13 +569,17 @@ LSQUnit<Impl>::executeLoad(const DynInstPtr &inst)
     // memroy instruction queue, we need to check how to make sure that
     // deferred instruction queue can be updated to mark those instruction
     // runnable again when Security Buffer is freed
-
+    //Deepali
     if (!(inst->isNonSpeculative())
-       /*&& !(SecBuf->isFull(inst->threadNumber)*/) {
+         && (secbuf->isFull(inst->threadNumber))){
       //TODO
-      //inst->setSecBufFull();
-      //return NoFault;
+      DPRINTF(AshishBasic, "DeepaliLSQ : Security buffer full to execute"
+             "load : PC %s, [sn:%lli]\n",
+            inst->pcState(), inst->seqNum);
+      inst->setSecBufFull();
+      return NoFault;
     }
+    //Deepali
     // ASHISH_LSQ
 
     load_fault = inst->initiateAcc();
@@ -675,6 +699,14 @@ LSQUnit<Impl>::commitLoad()
     DPRINTF(LSQUnit, "Committing head load instruction, PC %s\n",
             loadQueue.front().instruction()->pcState());
 
+    //Deepali - commit this particular load in the security buffer
+    InstSeqNum secBufCommitseqNum = loadQueue.front().instruction()->seqNum;
+    DPRINTF(AshishBasic, "DeepaliLSQ: Committing head load instruction,"
+             "PC %s, [sn:%lli]\n",
+            loadQueue.front().instruction()->pcState(), secBufCommitseqNum);
+    secbuf->commitEntry(secBufCommitseqNum,
+        loadQueue.front().instruction()->threadNumber);
+    //Deepali
     loadQueue.front().clear();
     loadQueue.pop_front();
 
@@ -735,10 +767,125 @@ template <class Impl>
 void
 LSQUnit<Impl>::writebackStores()
 {
+    DPRINTF(AshishBasic, "In Writeback store\n");
     if (isStoreBlocked) {
         DPRINTF(LSQUnit, "Writing back  blocked store\n");
         writebackBlockedStore();
     }
+
+    //Deepali
+    //Insert the entry from security buffer for writeback(fill)
+    //Set the pointer to the beginnning of the secuirty buffers
+        //to check for the entries to be filled once
+    secbuf->resetFillPointer();
+    //DPRINTF(AshishBasic, "About to start secbuf store\n");
+    while (!secbuf->isFillEmpty() && lsq->cachePortAvailable(false)) {
+        //DPRINTF(AshishBasic, "In start secbuf store\n");
+        //do this for all entries left in the secuirtybufferFill queue.
+        Addr secBufAddr;
+        uint8_t *secBufData;
+        InstSeqNum secBufseqNum;
+        ThreadID secBufTid;
+        uint8_t data_init_ = 0;
+        secBufData = &data_init_;
+        bool fillFound = secbuf->getFillEntry(&secBufseqNum,
+            &secBufAddr, secBufData, &secBufTid);
+
+        if (!fillFound) {
+            break;
+        }
+        DPRINTF(AshishBasic, "DeepaliD-Cache: Security buffer writing"
+            "back to Addr:%#x, data:%#x [sn:%lli]\n",
+                secBufAddr, (int)*(secBufData),
+                secBufseqNum);
+
+        //Create Dummy request which is consitent with the packet flow
+        //DEEPALI_ISSUE : Maybe it can't be storeWBIt - store queue iterator
+        // we just need it to be initalized with some store request element
+        //ASHISH_SEGFAULT
+        //create new instruction and copy it from the storeWBIt.
+        //if it works, same should be done for LSQRequest as well
+        //DPRINTF(AshishBasic, "Seg fault here 1\n");
+        //BaseO3DynInst<Impl> secBufFillinst_obj(*storeWBIt->instruction());
+        //DPRINTF(AshishBasic, "Seg fault here 2\n");
+        //DynInstPtr secBufFillinst = &secBufFillinst_obj;
+        //DynInstPtr secBufFillinst;
+        //secBufFillinst = new BaseDynInst<Impl>(storeWBIt->instruction());
+        DynInstPtr secBufFillinst = storeWBIt->instruction();
+        //ASHISH_SEGFAULT
+        typename LSQ::SingleDataRequest secBufFillinstreq_obj(
+                                         storeWBIt->request());
+        LSQRequest* secBufFillinstreq = &secBufFillinstreq_obj;
+        DPRINTF(AshishBasic, "point x1\n");
+
+        //ASHISH_SEGFAULT
+        //bool mem_is_null = false;
+        uint8_t *old_memData = secBufFillinst->memData;
+        secBufFillinst->memData = secBufData;
+        InstSeqNum old_seqNum = secBufFillinst->seqNum;
+        secBufFillinst->seqNum = secBufseqNum;
+        ThreadID old_threadNumber = secBufFillinst->threadNumber;
+        secBufFillinst->threadNumber = secBufTid;
+        //ASHISH_SEGFAULT
+        //See if we require to update the PC state as well
+        SQSenderState *state = new SQSenderState(storeWBIt);
+        state->isLoad = false;
+        state->needWB = false;
+        state->inst = secBufFillinst;
+
+        DPRINTF(AshishBasic, "point x2\n");
+        secBufFillinstreq->senderState(state);
+        DPRINTF(AshishBasic, "point x2.3\n");
+        secBufFillinstreq->addRequest(
+              storeWBIt->request()->request()->getPaddr(),
+              storeWBIt->request()->request()->getSize(),
+              storeWBIt->request()->request()->getByteEnable());
+        DPRINTF(AshishBasic, "point x2.5\n");
+        secBufFillinstreq->request()->setPaddr(secBufAddr);
+        DPRINTF(AshishBasic, "point x3\n");
+        secBufFillinstreq->request()->setSecBufFillReq(true);
+
+        //Write back output of getPaddr(), and issecBufFill()
+        DPRINTF(AshishBasic, "DeepaliD-Cache: Security buffer writing"
+             "back to Addr:%#x, data:%#x [sn:%lli], IsSecBufFill %d\n",
+                secBufFillinstreq->request()->getPaddr(), (int)*(secBufData),
+                secBufseqNum,
+                secBufFillinstreq->request()->getSecBufFillReq());
+
+        DPRINTF(AshishBasic, "point x4\n");
+        secBufFillinstreq->buildPackets();
+        DPRINTF(AshishBasic, "point x5\n");
+
+        //DEEPALI_ISSUE
+        DPRINTF(AshishBasic, "point 1\n");
+        if (secBufFillinstreq->_numOutstandingPackets == 0) {
+          DPRINTF(AshishBasic, "point 2\n");
+          secBufFillinstreq->sendPacketToCache();
+          DPRINTF(AshishBasic, "point 3\n");
+
+          /* If successful, do the post send */
+          if (secBufFillinstreq->isSent()) {
+              //We need to invalidate that entry out from the security buffer
+              secbuf->invalidateSuccessfulFills(secBufseqNum);
+          } else {
+              //The entry remians to be filled and still valid in security
+                  // buffer would be retried in the next try
+              DPRINTF(AshishBasic, "DeepaliD-Cache became blocked"
+                      "when writing [sn:%lli], will retry later\n",
+                      secBufFillinst->seqNum);
+          }
+        }
+        else {
+          DPRINTF(AshishBasic, "outstanding request. Will try later\n");
+        }
+        //ASHISH_SEGFAULT
+        secBufFillinst->memData = old_memData;
+        secBufFillinst->seqNum = old_seqNum;
+        secBufFillinst->threadNumber = old_threadNumber;
+        //ASHISH_SEGFAULT
+        secbuf->incrementSecBufPointer();
+    }
+    //Deepali
 
     while (storesToWB > 0 &&
            storeWBIt.dereferenceable() &&
@@ -847,7 +994,9 @@ LSQUnit<Impl>::writebackStores()
             continue;
         }
         /* Send to cache */
+          DPRINTF(AshishBasic, "point 4\n");
         req->sendPacketToCache();
+          DPRINTF(AshishBasic, "point 5\n");
 
         /* If successful, do the post send */
         if (req->isSent()) {
@@ -875,6 +1024,14 @@ LSQUnit<Impl>::squash(const InstSeqNum &squashed_num)
                 loadQueue.back().instruction()->pcState(),
                 loadQueue.back().instruction()->seqNum);
 
+        //Deepali - squash the following instrcution from the security Buffer
+        DPRINTF(AshishBasic,"DeepaliLSQ: Load Instruction PC %s squashed, "
+                "[sn:%lli]\n",
+                loadQueue.back().instruction()->pcState(),
+                loadQueue.back().instruction()->seqNum);
+        secbuf->squashEntry(loadQueue.back().instruction()->seqNum,
+            loadQueue.back().instruction()->threadNumber);
+        //Deepali
         if (isStalled() && loadQueue.tail() == stallingLoadIdx) {
             stalled = false;
             stallingStoreIsn = 0;

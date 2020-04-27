@@ -65,6 +65,16 @@ BaseO3DynInst<Impl>::BaseO3DynInst(const StaticInstPtr &_staticInst,
     initVars();
 }
 
+//ASHISH_SEGFAULT
+template <class Impl>
+BaseO3DynInst<Impl>::BaseO3DynInst(const BaseO3DynInst& copyInst)
+    : BaseDynInst<Impl>(copyInst.staticInst, copyInst.macroop,
+    copyInst.pc, copyInst.predPC, copyInst.seqNum, copyInst.cpu)
+{
+    initVars();
+}
+//ASHISH_SEGFAULT
+
 template <class Impl>BaseO3DynInst<Impl>::~BaseO3DynInst()
 {
 #if TRACING_ON

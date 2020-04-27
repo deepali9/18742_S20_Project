@@ -79,14 +79,31 @@ MemCmd::commandInfo[] =
     /* ReadReq - Read issued by a non-caching agent such as a CPU or
      * device, with no restrictions on alignment. */
     { SET3(IsRead, IsRequest, NeedsResponse), ReadResp, "ReadReq" },
+    //Deepali - start
+    /* SpeculativeReadReq - Read issued by a non-caching agent such as a CPU or
+     * device, with no restrictions on alignment. */
+    { SET4(IsRead, IsRequest, NeedsResponse, IsSpeculative),
+         SpeculativeReadResp, "SpeculativeReadReq" },
+    //Deepali
     /* ReadResp */
     { SET3(IsRead, IsResponse, HasData), InvalidCmd, "ReadResp" },
+    //Deepali - start
+    /* SpeculativeReadResponse */
+    { SET4(IsRead, IsResponse, HasData, IsSpeculative),
+         InvalidCmd, "SpeculativeReadResp" },
+    //Deepali
     /* ReadRespWithInvalidate */
     { SET4(IsRead, IsResponse, HasData, IsInvalidate),
             InvalidCmd, "ReadRespWithInvalidate" },
     /* WriteReq */
     { SET5(IsWrite, NeedsWritable, IsRequest, NeedsResponse, HasData),
             WriteResp, "WriteReq" },
+    //Deepali - start
+    /* Security buffer fill write request */
+        //Check if needs IsEviction attribute
+    { SET5(IsWrite, IsRequest, HasData, FromCache, IsSecBufFill),
+            InvalidCmd, "SecBufFillWriteReq" },
+    //Deepali
     /* WriteResp */
     { SET2(IsWrite, IsResponse), InvalidCmd, "WriteResp" },
     /* WritebackDirty */

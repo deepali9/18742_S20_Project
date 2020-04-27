@@ -51,6 +51,7 @@
 #include "cpu/inst_seq.hh"
 #include "cpu/o3/lsq_unit.hh"
 #include "cpu/utils.hh"
+#include "debug/AshishBasic.hh"
 #include "enums/SMTQueuePolicy.hh"
 #include "mem/port.hh"
 #include "sim/sim_object.hh"
@@ -69,6 +70,9 @@ class LSQ
     typedef typename Impl::DynInstPtr DynInstPtr;
     typedef typename Impl::CPUPol::IEW IEW;
     typedef typename Impl::CPUPol::LSQUnit LSQUnit;
+    //ASHISH_NEW
+    typedef typename Impl::CPUPol::SecBuf SecBuf;
+    //ASHISH_NEW
 
     class LSQRequest;
     /** Derived class to hold any sender state the LSQ needs. */
@@ -300,6 +304,31 @@ class LSQ
         std::vector<bool> _byteEnable;
         uint32_t _numOutstandingPackets;
         AtomicOpFunctorPtr _amo_op;
+        //Deepali
+        bool _isSecBufFill = false;
+        //ASHISH_SEGFAULT
+        void
+        addRequest(Addr addr, unsigned size,
+                   const std::vector<bool>& byte_enable)
+        {
+          DPRINTF(AshishBasic,"size of vector is: %u\n", _requests.size());
+            if (byte_enable.empty() ||
+                isAnyActiveElement(byte_enable.begin(), byte_enable.end())) {
+                DPRINTF(AshishBasic,"Inside if \n");
+                auto request = std::make_shared<Request>(_inst->getASID(),
+                        addr, size, _flags, _inst->masterId(),
+                        _inst->instAddr(), _inst->contextId(),
+                        std::move(_amo_op));
+                if (!byte_enable.empty()) {
+                    request->setByteEnable(byte_enable);
+                }
+                _requests.push_back(request);
+            }
+          DPRINTF(AshishBasic,"size of vector is: %u\n", _requests.size());
+        }
+        //ASHISH_SEGFAULT
+
+        //Deepali
       protected:
         LSQUnit* lsqUnit() { return &_port; }
         LSQRequest(LSQUnit* port, const DynInstPtr& inst, bool isLoad) :
@@ -334,6 +363,28 @@ class LSQ
             flags.set(Flag::IsAtomic, _inst->isAtomic());
             install();
         }
+
+        //ASHISH_SEGFAULT
+        LSQRequest(const LSQRequest* copy_req, bool isLoad=false,
+                   AtomicOpFunctorPtr amo_op = nullptr)
+            : _state(State::NotIssued), _senderState(nullptr),
+            numTranslatedFragments(0),
+            numInTranslationFragments(0),
+            _port(copy_req->_port), _inst(copy_req->_inst),
+            _data(copy_req->_data), _res(copy_req->_res),
+            _addr(copy_req->_addr), _size(copy_req->_size),
+            _flags(copy_req->_flags),
+            //_requests(copy_req->_requests),
+            _numOutstandingPackets(0),
+            _amo_op(std::move(amo_op))
+        {
+            flags.set(Flag::IsLoad, isLoad);
+            flags.set(Flag::WbStore,
+                      _inst->isStoreConditional() || _inst->isAtomic());
+            flags.set(Flag::IsAtomic, _inst->isAtomic());
+            install();
+        }
+        //ASHISH_SEGFAULT
 
         bool
         isLoad() const
@@ -404,22 +455,22 @@ class LSQ
          * The request is only added if the mask is empty or if there is at
          * least an active element in it.
          */
-        void
-        addRequest(Addr addr, unsigned size,
-                   const std::vector<bool>& byte_enable)
-        {
-            if (byte_enable.empty() ||
-                isAnyActiveElement(byte_enable.begin(), byte_enable.end())) {
-                auto request = std::make_shared<Request>(_inst->getASID(),
-                        addr, size, _flags, _inst->masterId(),
-                        _inst->instAddr(), _inst->contextId(),
-                        std::move(_amo_op));
-                if (!byte_enable.empty()) {
-                    request->setByteEnable(byte_enable);
-                }
-                _requests.push_back(request);
-            }
-        }
+        //void
+        //addRequest(Addr addr, unsigned size,
+        //           const std::vector<bool>& byte_enable)
+        //{
+        //    if (byte_enable.empty() ||
+        //        isAnyActiveElement(byte_enable.begin(), byte_enable.end())) {
+        //        auto request = std::make_shared<Request>(_inst->getASID(),
+        //                addr, size, _flags, _inst->masterId(),
+        //                _inst->instAddr(), _inst->contextId(),
+        //                std::move(_amo_op));
+        //        if (!byte_enable.empty()) {
+        //            request->setByteEnable(byte_enable);
+        //        }
+        //        _requests.push_back(request);
+        //    }
+        //}
 
         /** Destructor.
          * The LSQRequest owns the request. If the packet has already been
@@ -610,6 +661,14 @@ class LSQ
             return flags.isSet(Flag::Sent);
         }
 
+        //Deepali
+        bool
+        isSecBufFill()
+        {
+            return _isSecBufFill;
+        }
+        //Deepali
+
         bool
         isPartialFault()
         {
@@ -732,6 +791,11 @@ class LSQ
             LSQRequest(port, inst, isLoad, addr, size, flags_, data, res,
                        std::move(amo_op)) {}
 
+        //ASHISH_SEGFAULT
+        SingleDataRequest(LSQRequest* copy_req, bool isLoad=false,
+                          AtomicOpFunctorPtr amo_op = nullptr) :
+            LSQRequest(copy_req, isLoad, std::move(amo_op)) {}
+        //ASHISH_SEGFAULT
         inline virtual ~SingleDataRequest() {}
         virtual void initiateTranslation();
         virtual void finish(const Fault &fault, const RequestPtr &req,
@@ -834,6 +898,11 @@ class LSQ
     /** Sets the pointer to the list of active threads. */
     void setActiveThreads(std::list<ThreadID> *at_ptr);
 
+    //ASHISH_NEW
+    /** Sets pointer to the scoreboard. */
+    void setSecBuf(SecBuf *_SecBuf);
+    //ASHISH_NEW
+
     /** Perform sanity checks after a drain. */
     void drainSanityCheck() const;
     /** Has the LSQ drained? */
@@ -861,6 +930,8 @@ class LSQ
     /**
      * Commits loads up until the given sequence number for a specific thread.
      */
+    //Deepali - add call commit function of the security buffer
+        //from this for each of the instruction committed
     void commitLoads(InstSeqNum &youngest_inst, ThreadID tid)
     { thread.at(tid).commitLoads(youngest_inst); }
 
@@ -874,6 +945,7 @@ class LSQ
      * Attempts to write back stores until all cache ports are used or the
      * interface becomes blocked.
      */
+    //Deepali - update to include interrupt from the security buffer fill
     void writebackStores();
     /** Same as above, but only for one thread. */
     void writebackStores(ThreadID tid);
@@ -881,6 +953,8 @@ class LSQ
     /**
      * Squash instructions from a thread until the specified sequence number.
      */
+    //Deepali - add call commit function of the security buffer
+        //from this for each of the instruction squashed
     void
     squash(const InstSeqNum &squashed_num, ThreadID tid)
     {

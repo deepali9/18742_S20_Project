@@ -58,6 +58,7 @@
 #include "config/the_isa.hh"
 #include "cpu/inst_seq.hh"
 #include "cpu/timebuf.hh"
+#include "debug/AshishBasic.hh"
 #include "debug/LSQUnit.hh"
 #include "mem/packet.hh"
 #include "mem/port.hh"
@@ -88,6 +89,10 @@ class LSQUnit
     typedef typename Impl::CPUPol::IEW IEW;
     typedef typename Impl::CPUPol::LSQ LSQ;
     typedef typename Impl::CPUPol::IssueStruct IssueStruct;
+
+    //ASHISH_NEW_Deepali
+    typedef typename Impl::CPUPol::SecBuf SecBuf;
+    //ASHISH_NEW_Deepali
 
     using LSQSenderState = typename LSQ::LSQSenderState;
     using LSQRequest = typename Impl::CPUPol::LSQ::LSQRequest;
@@ -235,6 +240,11 @@ class LSQUnit
     void init(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params,
             LSQ *lsq_ptr, unsigned id);
 
+    //ASHISH_NEW_Deepali
+    /** Sets pointer to the scoreboard. */
+    void setSecBuf(SecBuf *_SecBuf);
+    //ASHISH_NEW_Deepali
+
     /** Returns the name of the LSQ unit. */
     std::string name() const;
 
@@ -280,9 +290,6 @@ class LSQUnit
     Fault executeStore(const DynInstPtr &inst);
 
     /** Commits the head load. */
-    //Deepali //
-    //Also need to send another packet to the secuirty buffer stating that the particular load instruction has been committed
-    //Deepali //
     void commitLoad();
     /** Commits loads older than a specific sequence number. */
     void commitLoads(InstSeqNum &youngest_inst);
@@ -295,13 +302,9 @@ class LSQUnit
 
     /** Completes the data access that has been returned from the
      * memory system. */
-    //Deepali - This shouldn't change just a normal read value from either secuirty buffer or memory subsystem back to the processor
     void completeDataAccess(PacketPtr pkt);
 
     /** Squashes all instructions younger than a specific sequence number. */
-    //Deepali //
-    //Also need to send another packet to the secuirty buffer stating that the particular load instruction has been squashed
-    //Deepali //
     void squash(const InstSeqNum &squashed_num);
 
     /** Returns if there is a memory ordering violation. Value is reset upon
@@ -411,6 +414,9 @@ class LSQUnit
     /** Pointer to the dcache port.  Used only for sending. */
     MasterPort *dcachePort;
 
+    //ASHISH_NEW_Deepali
+    SecBuf *secbuf;
+    //ASHISH_NEW_Deepali
     /** Particularisation of the LSQSenderState to the LQ. */
     class LQSenderState : public LSQSenderState
     {
@@ -680,7 +686,6 @@ LSQUnit<Impl>::read(LSQRequest *req, int load_idx)
         load_inst->memData = new uint8_t[MaxDataBytes];
 
         ThreadContext *thread = cpu->tcBase(lsqID);
-        //Deepali //
         PacketPtr main_pkt = new Packet(req->mainRequest(), MemCmd::ReadReq);
 
         main_pkt->dataStatic(load_inst->memData);
@@ -869,8 +874,25 @@ LSQUnit<Impl>::read(LSQRequest *req, int load_idx)
         state->isSplit = req->isSplit();
         req->senderState(state);
     }
-    //Deepali // This is where they build and sent packets
+    //Deepali
+    req->mainRequest()->setSpeculativeRead(
+        !(req->senderState()->inst->isNonSpeculative()));
+    //Deepali
     req->buildPackets();
+    //Deepali - Add an entry to the security buffer currently non-valid
+    //Check if speculative load
+    if (!(req->senderState()->inst->isNonSpeculative())) {
+        DPRINTF(AshishBasic, "DeepaliLSQ: Add blank/invalid entry to the"
+            "Security buffer Addr:%#x, data:%#x [sn:%lli]\n",
+            req->mainRequest()->getPaddr(),
+            (int)*(req->senderState()->inst->memData),
+            req->senderState()->inst->seqNum);
+        secbuf->addEntry(req->senderState()->inst->seqNum,
+            req->mainRequest()->getPaddr(),
+            req->senderState()->inst->memData,
+            req->senderState()->inst->threadNumber);
+    }
+    //Deepali
     req->sendPacketToCache();
     if (!req->isSent())
         iewStage->blockMemInst(load_inst);
