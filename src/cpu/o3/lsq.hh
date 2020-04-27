@@ -813,6 +813,10 @@ class LSQ
         virtual void handleIprWrite(ThreadContext *thread, PacketPtr pkt);
         virtual Cycles handleIprRead(ThreadContext *thread, PacketPtr pkt);
         virtual bool isCacheBlockHit(Addr blockAddr, Addr cacheBlockMask);
+        //ASHISH_SEGFAULT
+        void addRequestSDR(Addr addr, unsigned size,
+                   const std::vector<bool>& byte_enable);
+        //ASHISH_SEGFAULT
     };
 
     class SplitDataRequest : public LSQRequest
