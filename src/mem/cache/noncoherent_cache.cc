@@ -69,8 +69,11 @@ NoncoherentCache::NoncoherentCache(const NoncoherentCacheParams *p)
 {
 }
 
+//ASHISH_MEM
 void
-NoncoherentCache::satisfyRequest(PacketPtr pkt, CacheBlk *blk, bool, bool)
+//NoncoherentCache::satisfyRequest(PacketPtr pkt, CacheBlk *blk, bool, bool)
+NoncoherentCache::satisfyRequest(PacketPtr pkt, CacheBlk *blk,
+                                 bool, bool, bool)
 {
     // As this a non-coherent cache located below the point of
     // coherency, we do not expect requests that are typically used to
@@ -78,6 +81,7 @@ NoncoherentCache::satisfyRequest(PacketPtr pkt, CacheBlk *blk, bool, bool)
     assert(pkt->isRead() || pkt->isWrite());
     BaseCache::satisfyRequest(pkt, blk);
 }
+//ASHISH_MEM
 
 bool
 NoncoherentCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,

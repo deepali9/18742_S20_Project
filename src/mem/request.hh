@@ -405,7 +405,10 @@ class Request
           _extraData(0), _contextId(0), _pc(0),
           _reqInstSeqNum(0), atomicOpFunctor(nullptr), translateDelta(0),
           accessDelta(0), depth(0)
-    {}
+    {
+        _isSpeculativeRead = false;
+        _isSecBufFillReq = false;
+    }
 
     Request(Addr paddr, unsigned size, Flags flags, MasterID mid,
             InstSeqNum seq_num, ContextID cid)
@@ -418,6 +421,8 @@ class Request
         setPhys(paddr, size, flags, mid, curTick());
         setContext(cid);
         privateFlags.set(VALID_INST_SEQ_NUM);
+        _isSpeculativeRead = false;
+        _isSecBufFillReq = false;
     }
 
     /**
@@ -433,6 +438,8 @@ class Request
           accessDelta(0), depth(0)
     {
         setPhys(paddr, size, flags, mid, curTick());
+        _isSpeculativeRead = false;
+        _isSecBufFillReq = false;
     }
 
     Request(Addr paddr, unsigned size, Flags flags, MasterID mid, Tick time)
@@ -443,6 +450,8 @@ class Request
           accessDelta(0), depth(0)
     {
         setPhys(paddr, size, flags, mid, time);
+        _isSpeculativeRead = false;
+        _isSecBufFillReq = false;
     }
 
     Request(Addr paddr, unsigned size, Flags flags, MasterID mid, Tick time,
@@ -455,6 +464,8 @@ class Request
     {
         setPhys(paddr, size, flags, mid, time);
         privateFlags.set(VALID_PC);
+        _isSpeculativeRead = false;
+        _isSecBufFillReq = false;
     }
 
     Request(uint64_t asid, Addr vaddr, unsigned size, Flags flags,
@@ -467,6 +478,8 @@ class Request
     {
         setVirt(asid, vaddr, size, flags, mid, pc);
         setContext(cid);
+        _isSpeculativeRead = false;
+        _isSecBufFillReq = false;
     }
 
     Request(uint64_t asid, Addr vaddr, unsigned size, Flags flags,
@@ -475,6 +488,8 @@ class Request
     {
         setVirt(asid, vaddr, size, flags, mid, pc, std::move(atomic_op));
         setContext(cid);
+        _isSpeculativeRead = false;
+        _isSecBufFillReq = false;
     }
 
     Request(const Request& other)
@@ -494,6 +509,8 @@ class Request
 
         atomicOpFunctor.reset(other.atomicOpFunctor ?
                                 other.atomicOpFunctor->clone() : nullptr);
+        _isSpeculativeRead = false;
+        _isSecBufFillReq = false;
     }
 
     ~Request() {}

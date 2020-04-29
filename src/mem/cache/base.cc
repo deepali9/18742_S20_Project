@@ -50,6 +50,8 @@
 
 #include "base/compiler.hh"
 #include "base/logging.hh"
+#include "debug/AshishBasic.hh"
+#include "debug/AshishSecBuf.hh"
 #include "debug/Cache.hh"
 #include "debug/CacheComp.hh"
 #include "debug/CachePort.hh"
@@ -118,6 +120,7 @@ BaseCache::BaseCache(const BaseCacheParams *p, unsigned blk_size)
 
     // forward snoops is overridden in init() once we can query
     // whether the connected master is actually snooping or not
+    DPRINTF(AshishBasic, "Base cache created\n");
 
     tempBlock = new TempCacheBlk(blkSize);
 
@@ -469,9 +472,26 @@ BaseCache::recvTimingResp(PacketPtr pkt)
         DPRINTF(Cache, "Block for addr %#llx being updated in Cache\n",
                 pkt->getAddr());
 
+        //ASHISH_MEM
         const bool allocate = (writeAllocator && mshr->wasWholeLineWrite) ?
             writeAllocator->allocate() : mshr->allocOnFill();
-        blk = handleFill(pkt, blk, writebacks, allocate);
+        //if it is a speculative response access, do not cache it
+        bool pkt_is_speculative = false;
+        if (pkt->req->getSpeculativeRead()) {
+          pkt_is_speculative = true;
+          DPRINTF(AshishSecBuf, "Packet is speculative\n");
+        }
+        const bool main_allocate = allocate & !pkt_is_speculative;
+        if (!main_allocate) {
+          DPRINTF(AshishSecBuf, "main allocate is false\n");
+        }
+        else {
+          DPRINTF(AshishSecBuf, "main allocate is true\n");
+        }
+        //blk = handleFill(pkt, blk, writebacks, false);
+        blk = handleFill(pkt, blk, writebacks, main_allocate);
+        //blk = handleFill(pkt, blk, writebacks, allocate);
+        //ASHISH_MEM
         assert(blk != nullptr);
         ppFill->notify(pkt);
     }
@@ -906,11 +926,18 @@ BaseCache::updateCompressionData(CacheBlk *blk, const uint64_t* data,
 }
 
 void
-BaseCache::satisfyRequest(PacketPtr pkt, CacheBlk *blk, bool, bool)
+//BaseCache::satisfyRequest(PacketPtr pkt, CacheBlk *blk, bool, bool)
+//ASHISH_MEM
+//update the definition to this:
+BaseCache::satisfyRequest(PacketPtr pkt, CacheBlk *blk,
+                         bool deferred_response, bool pending_downgrade,
+                         bool called_from_MSHR)
+//ASHISH_MEM
 {
     assert(pkt->isRequest());
 
     assert(blk && blk->isValid());
+    //DPRINTF(AshishBasic,"Inside satisfy request for: %s\n",pkt->print());
     // Occasionally this is not true... if we are a lower-level cache
     // satisfying a string of Read and ReadEx requests from
     // upper-level caches, a Read will mark the block as shared but we
@@ -946,7 +973,11 @@ BaseCache::satisfyRequest(PacketPtr pkt, CacheBlk *blk, bool, bool)
         assert(blk->isWritable());
         // Write or WriteLine at the first cache with block in writable state
         if (blk->checkWrite(pkt)) {
+            //ASHISH_MEM
+           //DPRINTF(AshishBasic,"writing the data for:%s\n",pkt->print());
+           //Not going to insert skipping logic here. Only in case of read
             pkt->writeDataToBlock(blk->data, blkSize);
+            //ASHISH_MEM
         }
         // Always mark the line as dirty (and thus transition to the
         // Modified state) even if we are a failed StoreCond so we
@@ -961,7 +992,26 @@ BaseCache::satisfyRequest(PacketPtr pkt, CacheBlk *blk, bool, bool)
 
         // all read responses have a data payload
         assert(pkt->hasRespData());
+        //ASHISH_MEM
+        //DPRINTF(AshishBasic,"Going to read the data for:%s\n",pkt->print());
+        //if packet is coming from secbuf, don't skip. Otherwise, skip if it
+        //is speculative and it's called from the serviceMSHRTargets function
+        //if (pkt->isSpeculative() && called_from_MSHR) {
+        //   DPRINTF(AshishSecBuf,"Speculative read. Skipping cache update\n");
+        // }
+        // else{
+        //   pkt->setDataFromBlock(blk->data, blkSize);
+        // }
         pkt->setDataFromBlock(blk->data, blkSize);
+        //if (pkt->isSpeculative() && called_from_MSHR) {
+        //   DPRINTF(AshishSecBuf,"Speculative read. Skipping cache update\n");
+        //   //first check that element must be in cache
+        //
+        //   invalidateBlock(blk);
+        // }
+        // else{
+        // }
+        //ASHISH_MEM
     } else if (pkt->isUpgrade()) {
         // sanity check
         assert(!pkt->hasSharers());
@@ -2320,6 +2370,46 @@ bool
 BaseCache::CpuSidePort::recvTimingReq(PacketPtr pkt)
 {
     assert(pkt->isRequest());
+    // functional request
+    // ASHISH_MEM
+    // this function is called everytime a new packet arrives on the port
+    //DPRINTF(AshishBasic, "new request on the cache port%s\n", pkt->print());
+    //  if message is from secbuf,
+    //  you need to insert that line in the cache. Do the following:
+    //  if (pkt->fromSecBuff()) {
+    //    // 1. insert into lower level cache first
+    //    bool success = this.MemSidePort.sendTimingReq(pkt);
+    //    // 2. If it was successfully inserted into higher level, trying
+    //    // inserting it here This logic is derived from the access function
+    //    if (success) {
+    //      // TODO: what should be tag latency? = 0?
+    //      CacheBlk *blk = tags->accessBlock(pkt->getBlockAddr(blkSize),
+    //                                        pkt->isSecure(), tag_latency);
+    //      if (blk) {
+    //        DPRINTF(AshishBasic,"SecBuf filling in. cache hit\n");
+    //        pkt->writeDataToBlock(blk->data, blkSize);
+    //        return true;
+    //      }
+    //      else {
+    //        DPRINTF(AshishBasic,"SecBuf filling in. cache miss\n");
+    //        PacketList writebacks;
+    //        CacheBlk *newBlk = allocateBlock(pkt, writebacks);
+    //        if (newBlk) {
+    //          DPRINTF(AshishBasic,"SecBuf filling in. cache miss.",
+    //                  "Created new block\n");
+    //          pkt->writeDataToBlock(blk->data, blkSize);
+    //          return true;
+    //        }
+    //        else {
+    //          DPRINTF(AshishBasic,"SecBuf filling in. cache miss.",
+    //                  "could not create new block\n");
+    //          return false;
+    //        }
+    //      }
+    //    }
+    //  }
+
+    // ASHISH_MEM
 
     if (cache->system->bypassCaches()) {
         // Just forward the packet if caches are disabled.

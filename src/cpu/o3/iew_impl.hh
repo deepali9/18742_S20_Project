@@ -58,7 +58,6 @@
 #include "cpu/timebuf.hh"
 #include "debug/Activity.hh"
 #include "debug/AshishBasic.hh"
-#include "debug/AshishSecBuf.hh"
 #include "debug/Drain.hh"
 #include "debug/IEW.hh"
 #include "debug/O3PipeView.hh"

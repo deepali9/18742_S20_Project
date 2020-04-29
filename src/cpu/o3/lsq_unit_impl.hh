@@ -801,7 +801,7 @@ LSQUnit<Impl>::writebackStores()
                 secBufseqNum);
 
         secbuf->invalidateSuccessfulFills(secBufseqNum);
-        secbuf->incrementSecBufPointer();
+        //secbuf->incrementSecBufPointer();
         ////Create Dummy request which is consitent with the packet flow
         ////DEEPALI_ISSUE : Maybe it can't be storeWBIt - store queue iterator
         //// we just need it to be initalized with some store request element

@@ -59,7 +59,7 @@ from common import SimpleOpts
 
 # Set the usage message to display
 SimpleOpts.set_usage("usage: %prog [options] <binary to execute>")
-SecBufSize = 16 
+SecBufSize=1024
 SimpleOpts.add_option('--numSecBufEntries',
                           help="Number of entries in security buffer. Default: %s" % SecBufSize)
 

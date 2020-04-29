@@ -60,6 +60,8 @@
 #include "base/logging.hh"
 #include "base/trace.hh"
 #include "base/types.hh"
+#include "debug/AshishBasic.hh"
+#include "debug/AshishSecBuf.hh"
 #include "debug/Cache.hh"
 #include "debug/CacheTags.hh"
 #include "debug/CacheVerbose.hh"
@@ -75,13 +77,26 @@ Cache::Cache(const CacheParams *p)
     : BaseCache(p, p->system->cacheLineSize()),
       doFastWrites(true)
 {
+  DPRINTF(AshishBasic, "Cache block created\n");
 }
 
 void
 Cache::satisfyRequest(PacketPtr pkt, CacheBlk *blk,
-                      bool deferred_response, bool pending_downgrade)
+                      //bool deferred_response, bool pending_downgrade)
+                      //ASHISH_MEM
+                      //Update the parameters of this functions to see if the
+                      //MSHR called this function. This parameter is however
+                      //not used here. See base.cc for use
+                      bool deferred_response, bool pending_downgrade,
+                      bool called_from_MSHR)
+                      //ASHISH_MEM
 {
-    BaseCache::satisfyRequest(pkt, blk);
+    //BaseCache::satisfyRequest(pkt, blk);
+    //ASHISH_MEM
+    //update the call to below, see base.hh
+    BaseCache::satisfyRequest(pkt, blk, deferred_response, pending_downgrade,
+                              called_from_MSHR);
+    //ASHISH_MEM
 
     if (pkt->isRead()) {
         // determine if this read is from a (coherent) cache or not
@@ -483,6 +498,7 @@ Cache::createMissPacket(PacketPtr cpu_pkt, CacheBlk *blk,
 {
     // should never see evictions here
     assert(!cpu_pkt->isEviction());
+    DPRINTF(AshishBasic,"Found a miss for:%s\n",cpu_pkt->print());
 
     bool blkValid = blk && blk->isValid();
 
@@ -688,6 +704,7 @@ Cache::recvAtomic(PacketPtr pkt)
 void
 Cache::serviceMSHRTargets(MSHR *mshr, const PacketPtr pkt, CacheBlk *blk)
 {
+    //DPRINTF(AshishBasic, "Inside serviceMSHRTargets %s\n", pkt->print());
     QueueEntry::Target *initial_tgt = mshr->getTarget();
     // First offset for critical word first calculations
     const int initial_offset = initial_tgt->pkt->getOffset(blkSize);
@@ -764,7 +781,12 @@ Cache::serviceMSHRTargets(MSHR *mshr, const PacketPtr pkt, CacheBlk *blk)
             // either); otherwise we use the packet data.
             if (blk && blk->isValid() &&
                 (!mshr->isForward || !pkt->hasData())) {
-                satisfyRequest(tgt_pkt, blk, true, mshr->hasPostDowngrade());
+                //satisfyRequest(tgt_pkt, blk, true, mshr->hasPostDowngrade());
+                //ASHISH_MEM
+                //Replace that call with this.See base.hh for implementation
+                satisfyRequest(tgt_pkt, blk, true, mshr->hasPostDowngrade(),
+                               true);     //called_from_MSHR = true
+                //ASHISH_MEM
 
                 // How many bytes past the first request is this one
                 int transfer_offset =

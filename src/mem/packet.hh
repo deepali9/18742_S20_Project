@@ -932,7 +932,7 @@ class Packet : public Printable
         }
         //Deepali - if it is a fill from security buffer
         else if (req->getSecBufFillReq())
-            return MemCmd::SpeculativeReadReq;
+            return MemCmd::SecBufFillWriteReq;
         //Deepali
         else
             return MemCmd::WriteReq;
