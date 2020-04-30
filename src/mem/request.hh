@@ -388,9 +388,9 @@ class Request
 
     //Deepali
     /**Tag for speculative read - set false by default*/
-    bool _isSpeculativeRead = false;
+    bool _isSpeculativeRead;
     /**Tag for the write request being a Security Buffer Fill request*/
-    bool _isSecBufFillReq = false;
+    bool _isSecBufFillReq;
     //Deepali
   public:
 
@@ -405,7 +405,12 @@ class Request
           _extraData(0), _contextId(0), _pc(0),
           _reqInstSeqNum(0), atomicOpFunctor(nullptr), translateDelta(0),
           accessDelta(0), depth(0)
-    {}
+    {
+        //Deepali
+        setSpeculativeRead(false);
+        setSecBufFillReq(false);
+        //Deepali
+    }
 
     Request(Addr paddr, unsigned size, Flags flags, MasterID mid,
             InstSeqNum seq_num, ContextID cid)
@@ -416,6 +421,10 @@ class Request
           accessDelta(0), depth(0)
     {
         setPhys(paddr, size, flags, mid, curTick());
+        //Deepali
+        setSpeculativeRead(false);
+        setSecBufFillReq(false);
+        //Deepali
         setContext(cid);
         privateFlags.set(VALID_INST_SEQ_NUM);
     }
@@ -433,6 +442,10 @@ class Request
           accessDelta(0), depth(0)
     {
         setPhys(paddr, size, flags, mid, curTick());
+        //Deepali
+        setSpeculativeRead(false);
+        setSecBufFillReq(false);
+        //Deepali
     }
 
     Request(Addr paddr, unsigned size, Flags flags, MasterID mid, Tick time)
@@ -443,6 +456,10 @@ class Request
           accessDelta(0), depth(0)
     {
         setPhys(paddr, size, flags, mid, time);
+        //Deepali
+        setSpeculativeRead(false);
+        setSecBufFillReq(false);
+        //Deepali
     }
 
     Request(Addr paddr, unsigned size, Flags flags, MasterID mid, Tick time,
@@ -454,6 +471,10 @@ class Request
           accessDelta(0), depth(0)
     {
         setPhys(paddr, size, flags, mid, time);
+        //Deepali
+        setSpeculativeRead(false);
+        setSecBufFillReq(false);
+        //Deepali
         privateFlags.set(VALID_PC);
     }
 
@@ -466,6 +487,10 @@ class Request
           accessDelta(0), depth(0)
     {
         setVirt(asid, vaddr, size, flags, mid, pc);
+        //Deepali
+        setSpeculativeRead(false);
+        setSecBufFillReq(false);
+        //Deepali
         setContext(cid);
     }
 
@@ -474,6 +499,10 @@ class Request
             AtomicOpFunctorPtr atomic_op)
     {
         setVirt(asid, vaddr, size, flags, mid, pc, std::move(atomic_op));
+        //Deepali
+        setSpeculativeRead(false);
+        setSecBufFillReq(false);
+        //Deepali
         setContext(cid);
     }
 
@@ -491,6 +520,10 @@ class Request
           translateDelta(other.translateDelta),
           accessDelta(other.accessDelta), depth(other.depth)
     {
+        //Deepali
+        setSpeculativeRead(false);
+        setSecBufFillReq(false);
+        //Deepali
 
         atomicOpFunctor.reset(other.atomicOpFunctor ?
                                 other.atomicOpFunctor->clone() : nullptr);

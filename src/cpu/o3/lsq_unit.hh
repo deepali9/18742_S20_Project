@@ -96,6 +96,46 @@ class LSQUnit
 
     using LSQSenderState = typename LSQ::LSQSenderState;
     using LSQRequest = typename Impl::CPUPol::LSQ::LSQRequest;
+    //Deepali
+    class SecBufFillSenderState : public Packet::SenderState
+    {
+      public:
+        /** Default constructor. */
+        SecBufFillSenderState(bool isLoad_)
+            :  mainPkt(nullptr), pendingPacket(nullptr),
+              outstanding(0), isLoad(isLoad_), needWB(isLoad_), isSplit(false),
+              pktToSend(false), deleted(false)
+          { }
+
+        /** Instruction which initiated the access to memory. */
+        DynInstPtr inst;
+        /** The main packet from a split load, used during writeback. */
+        PacketPtr mainPkt;
+        /** A second packet from a split store that needs sending. */
+        PacketPtr pendingPacket;
+        /** Number of outstanding packets to complete. */
+        uint8_t outstanding;
+        /** Whether or not it is a load. */
+        bool isLoad;
+        /** Whether or not the instruction will need to writeback. */
+        bool needWB;
+        /** Whether or not this access is split in two. */
+        bool isSplit;
+        /** Whether or not there is a packet that needs sending. */
+        bool pktToSend;
+        /** Has the request been deleted?
+         * LSQ entries can be squashed before the response comes back. in that
+         * case the SenderState knows.
+         */
+        bool deleted;
+        ContextID contextId() { return inst->contextId(); }
+
+        /** Completes a packet and returns whether the access is finished. */
+        bool isComplete() { return outstanding == 0; }
+        void deleteRequest() { deleted = true; }
+        bool alive() { return !deleted; }
+    };
+    //Deepali
   private:
     class LSQEntry
     {
@@ -391,7 +431,9 @@ class LSQUnit
      * there are, false if there are not.
      */
     bool trySendPacket(bool isLoad, PacketPtr data_pkt);
-
+    //Deepali
+    bool trySendSecBufFillPacket(bool isLoad, PacketPtr data_pkt);
+    //Deepali
 
     /** Debugging function to dump instructions in the LSQ. */
     void dumpInsts() const;
@@ -882,15 +924,19 @@ LSQUnit<Impl>::read(LSQRequest *req, int load_idx)
     //Deepali - Add an entry to the security buffer currently non-valid
     //Check if speculative load
     if (!(req->senderState()->inst->isNonSpeculative())) {
-        DPRINTF(AshishBasic, "DeepaliLSQ: Add blank/invalid entry to the"
-            "Security buffer Addr:%#x, data:%#x [sn:%lli]\n",
-            req->mainRequest()->getPaddr(),
-            (int)*(req->senderState()->inst->memData),
-            req->senderState()->inst->seqNum);
+        //DPRINTF(AshishBasic, "DeepaliLSQ: Add blank/invalid entry to the"
+        //    "Security buffer Addr:%#x, data:%#x [sn:%lli] %s %s\n",
+        //    req->mainRequest()->getPaddr(),
+        //    (int)*(req->senderState()->inst->memData),
+        //    req->senderState()->inst->seqNum,
+        //    req->mainRequest()->getSpeculativeRead(),
+        //    req->mainPacket()->isSpeculative());
         secbuf->addEntry(req->senderState()->inst->seqNum,
             req->mainRequest()->getPaddr(),
             req->senderState()->inst->memData,
-            req->senderState()->inst->threadNumber);
+            req->senderState()->inst->threadNumber,
+            req->senderState()->inst,
+            req->mainRequest());
     }
     //Deepali
     req->sendPacketToCache();

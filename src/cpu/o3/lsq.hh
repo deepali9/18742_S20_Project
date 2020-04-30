@@ -306,35 +306,6 @@ class LSQ
         AtomicOpFunctorPtr _amo_op;
         //Deepali
         bool _isSecBufFill = false;
-        //ASHISH_SEGFAULT
-        void addRequest(Addr addr, unsigned size,
-                   const std::vector<bool>& byte_enable);
-       // {
-       //   //DPRINTF(AshishBasic,"size of vector is: %u\n", _requests.size());
-       //   //if (_requests.size() == 0) {
-       //   //  DPRINTF(AshishBasic,"size of vector is zero");
-       //   //}
-       //     if (byte_enable.empty() ||
-       //         isAnyActiveElement(byte_enable.begin(), byte_enable.end())) {
-       //         //DPRINTF(AshishBasic,"Inside if \n");
-       //         auto request = std::make_shared<Request>(_inst->getASID(),
-       //                 addr, size, _flags, _inst->masterId(),
-       //                 _inst->instAddr(), _inst->contextId(),
-       //                 std::move(_amo_op));
-       //         if (!byte_enable.empty()) {
-       //             request->setByteEnable(byte_enable);
-       //         }
-       //         _requests.push_back(request);
-       //     }
-       //   //if (_requests.size() == 1) {
-       //   //  DPRINTF(AshishBasic,"size of vector is one");
-       //   //}
-       //   //if (_requests.size() == 0) {
-       //   //  DPRINTF(AshishBasic,"size of vector is zero");
-       //   //}
-       // }
-        //ASHISH_SEGFAULT
-
         //Deepali
       protected:
         LSQUnit* lsqUnit() { return &_port; }
@@ -462,22 +433,22 @@ class LSQ
          * The request is only added if the mask is empty or if there is at
          * least an active element in it.
          */
-        //void
-        //addRequest(Addr addr, unsigned size,
-        //           const std::vector<bool>& byte_enable)
-        //{
-        //    if (byte_enable.empty() ||
-        //        isAnyActiveElement(byte_enable.begin(), byte_enable.end())) {
-        //        auto request = std::make_shared<Request>(_inst->getASID(),
-        //                addr, size, _flags, _inst->masterId(),
-        //                _inst->instAddr(), _inst->contextId(),
-        //                std::move(_amo_op));
-        //        if (!byte_enable.empty()) {
-        //            request->setByteEnable(byte_enable);
-        //        }
-        //        _requests.push_back(request);
-        //    }
-        //}
+        void
+        addRequest(Addr addr, unsigned size,
+                   const std::vector<bool>& byte_enable)
+        {
+            if (byte_enable.empty() ||
+                isAnyActiveElement(byte_enable.begin(), byte_enable.end())) {
+                auto request = std::make_shared<Request>(_inst->getASID(),
+                        addr, size, _flags, _inst->masterId(),
+                        _inst->instAddr(), _inst->contextId(),
+                        std::move(_amo_op));
+                if (!byte_enable.empty()) {
+                    request->setByteEnable(byte_enable);
+                }
+                _requests.push_back(request);
+            }
+        }
 
         /** Destructor.
          * The LSQRequest owns the request. If the packet has already been

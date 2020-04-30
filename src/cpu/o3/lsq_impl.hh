@@ -338,6 +338,14 @@ template <class Impl>
 bool
 LSQ<Impl>::recvTimingResp(PacketPtr pkt)
 {
+    DPRINTF(AshishBasic, "Packet response for sec buf fill = %s\n",
+         pkt->isSecBufFill());
+    //Deepali
+    if (pkt->isSecBufFill()) {
+        //DPRINTF(AshishBasic, "Packet response for sec buf fill\n");
+        return true;
+    }
+    //Deepali
     if (pkt->isError())
         DPRINTF(LSQ, "Got error packet back for address: %#X\n",
                 pkt->getAddr());
@@ -376,6 +384,12 @@ template <class Impl>
 void
 LSQ<Impl>::recvTimingSnoopReq(PacketPtr pkt)
 {
+    //Deepali
+    if (pkt->isSecBufFill()) {
+        //DPRINTF(AshishBasic, "Packet response for sec buf fill\n");
+        return;
+    }
+    //Deepali
     DPRINTF(LSQ, "received pkt for addr:%#x %s\n", pkt->getAddr(),
             pkt->cmdString());
 
@@ -994,42 +1008,15 @@ LSQ<Impl>::LSQRequest::sendFragmentToTranslation(int i)
             this->isLoad() ? BaseTLB::Read : BaseTLB::Write);
 }
 
-//ASHISH_SEGFAULT
-template<class Impl>
-void
-LSQ<Impl>::LSQRequest::addRequest(Addr addr, unsigned size,
-           const std::vector<bool>& byte_enable)
-{
-  //DPRINTF(AshishBasic,"size of vector is: %u\n", _requests.size());
-  //if (_requests.size() == 0) {
-  //  DPRINTF(AshishBasic,"size of vector is zero");
-  //}
-    if (byte_enable.empty() ||
-        isAnyActiveElement(byte_enable.begin(), byte_enable.end())) {
-        //DPRINTF(AshishBasic,"Inside if \n");
-        auto request = std::make_shared<Request>(_inst->getASID(),
-                addr, size, _flags, _inst->masterId(),
-                _inst->instAddr(), _inst->contextId(),
-                std::move(_amo_op));
-        if (!byte_enable.empty()) {
-            request->setByteEnable(byte_enable);
-        }
-        _requests.push_back(request);
-    }
-  //DPRINTF(AshishBasic,"size of vector is: %u\n", _requests.size());
-  //if (_requests.size() == 1) {
-  //  DPRINTF(AshishBasic,"size of vector is one");
-  //}
-  //if (_requests.size() == 0) {
-  //  DPRINTF(AshishBasic,"size of vector is zero");
-  //}
-}
-//ASHISH_SEGFAULT
-
 template<class Impl>
 bool
 LSQ<Impl>::SingleDataRequest::recvTimingResp(PacketPtr pkt)
 {
+    //Deepali
+    if (pkt->isSecBufFill()) {
+        return true;
+    }
+    //Deepali
     assert(_numOutstandingPackets == 1);
     auto state = dynamic_cast<LSQSenderState*>(pkt->senderState);
     flags.set(Flag::Complete);
@@ -1043,6 +1030,11 @@ template<class Impl>
 bool
 LSQ<Impl>::SplitDataRequest::recvTimingResp(PacketPtr pkt)
 {
+    //Deepali
+    if (pkt->isSecBufFill()) {
+        return true;
+    }
+    //Deepali
     auto state = dynamic_cast<LSQSenderState*>(pkt->senderState);
     uint32_t pktIdx = 0;
     while (pktIdx < _packets.size() && pkt != _packets[pktIdx])
