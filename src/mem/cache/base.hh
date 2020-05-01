@@ -60,6 +60,7 @@
 #include "base/statistics.hh"
 #include "base/trace.hh"
 #include "base/types.hh"
+#include "debug/AshishSecBuf.hh"
 #include "debug/Cache.hh"
 #include "debug/CachePort.hh"
 #include "enums/Clusivity.hh"
@@ -528,6 +529,10 @@ class BaseCache : public ClockedObject
      */
     virtual void recvTimingResp(PacketPtr pkt);
 
+    //ASHISH_MEM
+    bool handleSecBufFill(PacketPtr pkt);
+    //ASHISH_MEM
+
     /**
      * Snoops bus transactions to maintain coherence.
      * @param pkt The current bus transaction.
@@ -696,7 +701,14 @@ class BaseCache : public ClockedObject
      */
     virtual void satisfyRequest(PacketPtr pkt, CacheBlk *blk,
                                 bool deferred_response = false,
-                                bool pending_downgrade = false);
+                                bool pending_downgrade = false, //);
+                                //ASHISH_MEM
+                                //insert third parameter in the function to
+                                //differentiate if this function was called
+                                //from the serviceMSHRTargets. Provide default
+                                //value
+                                bool called_from_MSHR = false);
+                                //ASHISH_MEM
 
     /**
      * Maintain the clusivity of this cache by potentially

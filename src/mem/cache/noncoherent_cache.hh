@@ -109,9 +109,12 @@ class NoncoherentCache : public BaseCache
 
     void functionalAccess(PacketPtr pkt, bool from_cpu_side) override;
 
+    //ASHISH_MEM
     void satisfyRequest(PacketPtr pkt, CacheBlk *blk,
                         bool deferred_response = false,
-                        bool pending_downgrade = false) override;
+                        bool pending_downgrade = false, //) override;
+                        bool called_from_MSHR = false) override;
+    //ASHISH_MEM
 
     /*
      * Creates a new packet with the request to be send to the memory

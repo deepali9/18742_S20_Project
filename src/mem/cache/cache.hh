@@ -56,6 +56,7 @@
 #include <unordered_set>
 
 #include "base/types.hh"
+#include "debug/AshishSecBuf.hh"
 #include "mem/cache/base.hh"
 #include "mem/packet.hh"
 
@@ -119,7 +120,11 @@ class Cache : public BaseCache
 
     void satisfyRequest(PacketPtr pkt, CacheBlk *blk,
                         bool deferred_response = false,
-                        bool pending_downgrade = false) override;
+                        bool pending_downgrade = false, //) override;
+                        //ASHISH_MEM
+                        //append following. See base.hh
+                        bool called_from_MSHR = false) override;
+                        //ASHISH_MEM
 
     void doTimingSupplyResponse(PacketPtr req_pkt, const uint8_t *blk_data,
                                 bool already_copied, bool pending_inval);
