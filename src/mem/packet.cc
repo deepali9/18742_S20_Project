@@ -101,7 +101,7 @@ MemCmd::commandInfo[] =
     //Deepali - start
     /* Security buffer fill write request */
         //Check if needs IsEviction attribute
-    { SET5(IsWrite, IsRequest, HasData, FromCache, IsSecBufFill),
+    { SET6(IsWrite, IsRequest, IsEviction, HasData, FromCache, IsSecBufFill),
             InvalidCmd, "SecBufFillWriteReq" },
     //Deepali
     /* WriteResp */

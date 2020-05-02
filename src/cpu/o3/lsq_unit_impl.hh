@@ -788,6 +788,12 @@ LSQUnit<Impl>::writebackStores()
     while (!secbuf->isFillEmpty() && lsq->cachePortAvailable(false)) {
         //DPRINTF(AshishBasic, "In start secbuf store\n");
         //do this for all entries left in the secuirtybufferFill queue.
+        //Check if store is blocked and break if it is
+        if (isStoreBlocked) {
+            DPRINTF(AshishBasic, "Unable to write back any more secbuf"
+                 "stores, cache is blocked!\n");
+            break;
+        }
         Addr secBufAddr;
         uint8_t *secBufData;
         InstSeqNum secBufseqNum;
@@ -849,11 +855,11 @@ LSQUnit<Impl>::writebackStores()
         //secBufFillinstreq->sendPacketToCache();
         //Sort of Copy of execution from  trySendPacket
         //ISSUE_HERE
-        bool secBufFillNotSent = trySendSecBufFillPacket(false, secBufFillpkt);
+        bool secBufFillSent = trySendSecBufFillPacket(false, secBufFillpkt);
         DPRINTF(AshishBasic, "point 1\n");
 
         /* If successful, do the post fill invalidate */
-        if (!secBufFillNotSent) {
+        if (secBufFillSent) {
             //We need to invalidate that entry out from the security buffer
             secbuf->invalidateSuccessfulFills(secBufseqNum);
          } else {
@@ -1256,6 +1262,9 @@ LSQUnit<Impl>::trySendPacket(bool isLoad, PacketPtr data_pkt)
         lsq->cachePortBusy(isLoad);
         state->outstanding++;
         state->request()->packetSent();
+        //Deepali
+        DPRINTF(AshishBasic, "send packet\n");
+        //Deepali
     } else {
         if (cache_got_blocked) {
             lsq->cacheBlocked(true);

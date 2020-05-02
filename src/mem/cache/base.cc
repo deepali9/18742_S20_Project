@@ -2366,21 +2366,28 @@ BaseCache::CpuSidePort::tryTiming(PacketPtr pkt)
     return true;
 }
 
+//ASHISH_MEM
 bool
 BaseCache::handleSecBufFill(PacketPtr pkt)
 {
   // 1. insert into lower level cache first
+  // Deepali Why is this memSidePort, not cache->memSidePort (ln:2436)
   bool success = memSidePort.sendTimingReq(pkt);
+  DPRINTF(AshishBasic,"insertion in lower level success? %s\n",
+    success);
   // 2. If it was successfully inserted into higher level, trying
   // inserting it here This logic is derived from the access function
+  // This should work even when success = true - check that first
   if (success) {
     // TODO: what should be tag latency? = 0?
     Cycles tag_latency(0);
     CacheBlk *blk = tags->accessBlock(pkt->getBlockAddr(blkSize),
                                       pkt->isSecure(), tag_latency);
+    DPRINTF(AshishBasic,"Block accessed\n");
     if (blk) {
       DPRINTF(AshishBasic,"SecBuf filling in. cache hit\n");
       pkt->writeDataToBlock(blk->data, blkSize);
+      DPRINTF(AshishBasic,"Cache hit Writeback\n");
       return true;
     }
     else {
@@ -2388,13 +2395,14 @@ BaseCache::handleSecBufFill(PacketPtr pkt)
       PacketList writebacks;
       CacheBlk *newBlk = allocateBlock(pkt, writebacks);
       if (newBlk) {
-        DPRINTF(AshishBasic,"SecBuf filling in. cache miss.",
+        DPRINTF(AshishBasic,"SecBuf filling in. cache miss."
                 "Created new block\n");
-        pkt->writeDataToBlock(blk->data, blkSize);
+        pkt->writeDataToBlock(newBlk->data, blkSize);
+        DPRINTF(AshishBasic,"Cache miss new block writeback\n");
         return true;
       }
       else {
-        DPRINTF(AshishBasic,"SecBuf filling in. cache miss.",
+        DPRINTF(AshishBasic,"SecBuf filling in. cache miss."
                 "could not create new block\n");
         return false;
       }
@@ -2402,10 +2410,12 @@ BaseCache::handleSecBufFill(PacketPtr pkt)
   }
   return false;
 }
+//ASHISH_MEM
 
 bool
 BaseCache::CpuSidePort::recvTimingReq(PacketPtr pkt)
 {
+    DPRINTF(AshishBasic,"Recv Packet\n");
     assert(pkt->isRequest());
     // functional request
     // ASHISH_MEM
@@ -2413,41 +2423,8 @@ BaseCache::CpuSidePort::recvTimingReq(PacketPtr pkt)
     //  if message is from secbuf,
     //  you need to insert that line in the cache. Do the following:
     if (pkt->isSecBufFill()) {
+        DPRINTF(AshishBasic,"SecBuf fill Request\n");
       return cache->handleSecBufFill(pkt);
-      //// 1. insert into lower level cache first
-      //bool success = cache->memSidePort.sendTimingReq(pkt);
-      //// 2. If it was successfully inserted into higher level, trying
-      //// inserting it here This logic is derived from the access function
-      //if (success) {
-      //  // TODO: what should be tag latency? = 0?
-      //  unsigned block_size = getBlockSize();
-      //  CacheBlk *blk = cache->tags->accessBlock(
-      //                                    pkt->getBlockAddr(block_size),
-      //                                    //pkt->isSecure(), tag_latency);
-      //                                    pkt->isSecure(), 0);
-      //  if (blk) {
-      //    DPRINTF(AshishBasic,"SecBuf filling in. cache hit\n");
-      //    pkt->writeDataToBlock(blk->data, block_size);
-      //    return true;
-      //  }
-      //  else {
-      //    DPRINTF(AshishBasic,"SecBuf filling in. cache miss\n");
-      //    PacketList writebacks;
-      //    CacheBlk *newBlk = allocateBlock(pkt, writebacks);
-      //    if (newBlk) {
-      //      DPRINTF(AshishBasic,"SecBuf filling in. cache miss.",
-      //              "Created new block\n");
-      //      pkt->writeDataToBlock(blk->data, block_size);
-      //      return true;
-      //    }
-      //    else {
-      //      DPRINTF(AshishBasic,"SecBuf filling in. cache miss.",
-      //              "could not create new block\n");
-      //      return false;
-      //    }
-      //  }
-      //}
-      //return false;
     }
 
     // ASHISH_MEM
@@ -2455,11 +2432,19 @@ BaseCache::CpuSidePort::recvTimingReq(PacketPtr pkt)
     if (cache->system->bypassCaches()) {
         // Just forward the packet if caches are disabled.
         // @todo This should really enqueue the packet rather
+        DPRINTF(AshishBasic,"Recv Packet Non SecBuf Fill"
+        " Bypass caches\n");
         bool M5_VAR_USED success = cache->memSidePort.sendTimingReq(pkt);
         assert(success);
+        DPRINTF(AshishBasic,"Recv Packet Non SecBuf Fill"
+        " Bypass caches 1\n");
         return true;
     } else if (tryTiming(pkt)) {
+        DPRINTF(AshishBasic,"Recv Packet Non SecBuf Fill SecBufFill"
+            " = %s, SpeculativeRead = %s\n", pkt->isSecBufFill(),
+             pkt->isSpeculative());
         cache->recvTimingReq(pkt);
+        DPRINTF(AshishBasic,"Recv Packet Non SecBuf Fill 1\n");
         return true;
     }
     return false;
