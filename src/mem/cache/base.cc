@@ -2372,13 +2372,13 @@ BaseCache::handleSecBufFill(PacketPtr pkt)
 {
   // 1. insert into lower level cache first
   // Deepali Why is this memSidePort, not cache->memSidePort (ln:2436)
-  bool success = memSidePort.sendTimingReq(pkt);
-  DPRINTF(AshishBasic,"insertion in lower level success? %s\n",
-    success);
+  //bool success = memSidePort.sendTimingReq(pkt);
+  //DPRINTF(AshishBasic,"insertion in lower level success? %s\n",
+  //  success);
   // 2. If it was successfully inserted into higher level, trying
   // inserting it here This logic is derived from the access function
   // This should work even when success = true - check that first
-  if (success) {
+  if (true) {
     // TODO: what should be tag latency? = 0?
     Cycles tag_latency(0);
     CacheBlk *blk = tags->accessBlock(pkt->getBlockAddr(blkSize),
@@ -2386,6 +2386,8 @@ BaseCache::handleSecBufFill(PacketPtr pkt)
     DPRINTF(AshishBasic,"Block accessed\n");
     if (blk) {
       DPRINTF(AshishBasic,"SecBuf filling in. cache hit\n");
+      blk->setWhenReady(clockEdge(fillLatency) + pkt->headerDelay +
+                      pkt->payloadDelay);
       pkt->writeDataToBlock(blk->data, blkSize);
       DPRINTF(AshishBasic,"Cache hit Writeback\n");
       return true;
@@ -2397,6 +2399,8 @@ BaseCache::handleSecBufFill(PacketPtr pkt)
       if (newBlk) {
         DPRINTF(AshishBasic,"SecBuf filling in. cache miss."
                 "Created new block\n");
+        newBlk->setWhenReady(clockEdge(fillLatency) + pkt->headerDelay +
+                      pkt->payloadDelay);
         pkt->writeDataToBlock(newBlk->data, blkSize);
         DPRINTF(AshishBasic,"Cache miss new block writeback\n");
         return true;
