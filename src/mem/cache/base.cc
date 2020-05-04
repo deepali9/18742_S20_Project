@@ -2389,7 +2389,7 @@ BaseCache::handleSecBufFill(PacketPtr pkt)
       blk->setWhenReady(clockEdge(fillLatency) + pkt->headerDelay +
                       pkt->payloadDelay);
       pkt->writeDataToBlock(blk->data, blkSize);
-      DPRINTF(AshishBasic,"Cache hit Writeback\n");
+      DPRINTF(AshishBasic,"Cache hit : Write Data to Block\n");
       return true;
     }
     else {
@@ -2402,7 +2402,7 @@ BaseCache::handleSecBufFill(PacketPtr pkt)
         newBlk->setWhenReady(clockEdge(fillLatency) + pkt->headerDelay +
                       pkt->payloadDelay);
         pkt->writeDataToBlock(newBlk->data, blkSize);
-        DPRINTF(AshishBasic,"Cache miss new block writeback\n");
+        DPRINTF(AshishBasic,"Cache miss : Write Data to new Block\n");
         return true;
       }
       else {
@@ -2419,7 +2419,7 @@ BaseCache::handleSecBufFill(PacketPtr pkt)
 bool
 BaseCache::CpuSidePort::recvTimingReq(PacketPtr pkt)
 {
-    DPRINTF(AshishBasic,"Recv Packet\n");
+    DPRINTF(AshishBasic,"Cache : Recv Packet\n");
     assert(pkt->isRequest());
     // functional request
     // ASHISH_MEM
@@ -2441,14 +2441,14 @@ BaseCache::CpuSidePort::recvTimingReq(PacketPtr pkt)
         bool M5_VAR_USED success = cache->memSidePort.sendTimingReq(pkt);
         assert(success);
         DPRINTF(AshishBasic,"Recv Packet Non SecBuf Fill"
-        " Bypass caches 1\n");
+        " by-passed caches\n");
         return true;
     } else if (tryTiming(pkt)) {
         DPRINTF(AshishBasic,"Recv Packet Non SecBuf Fill SecBufFill"
             " = %s, SpeculativeRead = %s\n", pkt->isSecBufFill(),
              pkt->isSpeculative());
         cache->recvTimingReq(pkt);
-        DPRINTF(AshishBasic,"Recv Packet Non SecBuf Fill 1\n");
+        DPRINTF(AshishBasic,"Received Packet Non SecBuf Fill\n");
         return true;
     }
     return false;

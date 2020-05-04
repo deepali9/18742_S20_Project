@@ -924,13 +924,13 @@ LSQUnit<Impl>::read(LSQRequest *req, int load_idx)
     //Deepali - Add an entry to the security buffer currently non-valid
     //Check if speculative load
     if (!(req->senderState()->inst->isNonSpeculative())) {
-        //DPRINTF(AshishBasic, "DeepaliLSQ: Add blank/invalid entry to the"
-        //    "Security buffer Addr:%#x, data:%#x [sn:%lli] %s %s\n",
-        //    req->mainRequest()->getPaddr(),
-        //    (int)*(req->senderState()->inst->memData),
-        //    req->senderState()->inst->seqNum,
-        //    req->mainRequest()->getSpeculativeRead(),
-        //    req->mainPacket()->isSpeculative());
+        DPRINTF(AshishBasic, "DeepaliLSQ: Add blank/invalid entry to the"
+            "Security buffer Addr:%#x, data:%#x [sn:%lli] %s %s\n",
+            req->mainRequest()->getPaddr(),
+            (int)*(req->senderState()->inst->memData),
+            req->senderState()->inst->seqNum,
+            req->mainRequest()->getSpeculativeRead(),
+            req->mainPacket()->isSpeculative());
         secbuf->addEntry(req->senderState()->inst->seqNum,
             req->mainRequest()->getPaddr(),
             req->senderState()->inst->memData,

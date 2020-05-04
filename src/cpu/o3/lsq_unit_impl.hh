@@ -820,7 +820,7 @@ LSQUnit<Impl>::writebackStores()
             // have any entries this should still go
         //if (storeWBIt == storeQueue.end())
         //    DPRINTF(AshishBasic, "store queue empty \n");
-        DPRINTF(AshishBasic, "point x1\n");
+        //DPRINTF(AshishBasic, "point x1\n");
 
         secBufFillinst->memData = secBufData;
         secBufFillinst->seqNum = secBufseqNum;
@@ -831,9 +831,9 @@ LSQUnit<Impl>::writebackStores()
         state->needWB = false;
         state->inst = secBufFillinst;
 
-        DPRINTF(AshishBasic, "point x2.3\n");
+        //DPRINTF(AshishBasic, "point x2.3\n");
         secBufFillreq->setPaddr(secBufAddr);
-        DPRINTF(AshishBasic, "point x3\n");
+        //DPRINTF(AshishBasic, "point x3\n");
         secBufFillreq->setSecBufFillReq(true);
 
         //Write back output of getPaddr(), and issecBufFill()
@@ -843,20 +843,20 @@ LSQUnit<Impl>::writebackStores()
                 secBufseqNum,
                 secBufFillreq->getSecBufFillReq());
 
-        DPRINTF(AshishBasic, "point x4\n");
+        //DPRINTF(AshishBasic, "point x4\n");
         //secBufFillinstreq->buildPackets();
         PacketPtr secBufFillpkt = Packet::createWrite(secBufFillreq);
-        DPRINTF(AshishBasic, "point x5\n");
+        //DPRINTF(AshishBasic, "point x5\n");
         secBufFillpkt->dataStatic(secBufData);
         secBufFillpkt->senderState = state;
 
-        DPRINTF(AshishBasic, "isSecBufFill packet = %s\n",
-             secBufFillpkt->isSecBufFill());
+        //DPRINTF(AshishBasic, "isSecBufFill packet = %s\n",
+        //     secBufFillpkt->isSecBufFill());
         //secBufFillinstreq->sendPacketToCache();
         //Sort of Copy of execution from  trySendPacket
         //ISSUE_HERE
         bool secBufFillSent = trySendSecBufFillPacket(false, secBufFillpkt);
-        DPRINTF(AshishBasic, "point 1\n");
+        //DPRINTF(AshishBasic, "point 1\n");
 
         /* If successful, do the post fill invalidate */
         if (secBufFillSent) {
@@ -994,21 +994,21 @@ LSQUnit<Impl>::writebackStores()
             continue;
         }
         /* Send to cache */
-          DPRINTF(AshishBasic, "point 4\n");
+          //DPRINTF(AshishBasic, "point 4\n");
         req->sendPacketToCache();
-          DPRINTF(AshishBasic, "point 5\n");
+          //DPRINTF(AshishBasic, "point 5\n");
 
         /* If successful, do the post send */
         if (req->isSent()) {
             storePostSend();
-            DPRINTF(AshishBasic, "point 6\n");
+            //DPRINTF(AshishBasic, "point 6\n");
         } else {
             DPRINTF(LSQUnit, "D-Cache became blocked when writing [sn:%lli], "
                     "will retry later\n",
                     inst->seqNum);
         }
     }
-    DPRINTF(AshishBasic, "point 7\n");
+    //DPRINTF(AshishBasic, "point 7\n");
     assert(stores >= 0 && storesToWB >= 0);
 }
 
